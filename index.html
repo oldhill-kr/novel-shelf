@@ -113,6 +113,10 @@ article h1{margin:8px 0 0;font:700 clamp(26px,5vw,34px)/1.3 var(--f-display);tex
 .pn button:last-child{text-align:right}
 .hint{text-align:center;color:var(--muted);font-size:13px;margin-top:20px}
 
+.bk{display:flex;flex-direction:column;gap:8px}
+.bk .resume{align-self:flex-start}
+.ctas{display:flex;gap:10px;flex-wrap:wrap}
+.cta.ghost{background:none;color:var(--nv);border:1px solid var(--nv)}
 @media (max-width:520px){
   .book,.nhead{grid-template-columns:96px minmax(0,1fr);gap:14px}
   .cover{padding:12px 8px}.cover .ct{font-size:14px}
@@ -178,6 +182,18 @@ const spear='<svg viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="
 const frost='<svg viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true"><path d="M20 0 V140"/><path d="M50 0 V96"/><path d="M80 0 V120"/><path d="M8 118 L92 118"/></svg>';
 const art={a:frost,b:spear};
 
+/* 읽던 위치: 회차 번호와 본문 세로 위치(0~1 비율)를 작품별로 저장 */
+const getPos=id=>{const p=ls.get('pos-'+id,null);return p&&typeof p.idx==='number'?p:null};
+const savePos=(id,idx,y)=>ls.set('pos-'+id,{idx,y:Math.min(1,Math.max(0,y))});
+let canSave=false;
+function curY(){const d=document.documentElement;return window.scrollY/Math.max(1,d.scrollHeight-window.innerHeight)}
+function resumeLabel(n){
+  const p=getPos(n.id);
+  if(!p||p.idx>=n.episodes.length)return null;
+  return '이어 읽기 · '+n.episodes[p.idx].label+(p.y>0.02?' · '+Math.round(p.y*100)+'%':'');
+}
+function resume(n){const p=getPos(n.id);if(p&&p.idx<n.episodes.length)go('reader',n.id,p.idx,true,p.y)}
+
 let DATA=[];
 const byId=id=>DATA.find(n=>n.id===id);
 const bodyCache={};
@@ -210,7 +226,10 @@ function coverHTML(n){
 }
 
 let cur={view:'home',nid:null,idx:0};
-function go(view,nid,idx,push){
+let pendingY=null,firstRender=true;
+function go(view,nid,idx,push,resumeY){
+  pendingY=resumeY==null?null:resumeY;
+  firstRender=false;
   cur={view,nid:nid||null,idx:idx||0};
   render();
   window.scrollTo(0,0);
@@ -246,7 +265,16 @@ function renderHome(){
     const rd=readSet(n.id).size;
     b.innerHTML=coverHTML(n)+'<div class="binfo"><span class="tag">'+esc(n.genre)+'</span><h2>'+esc(n.title)+'</h2><p>'+esc(n.synopsis)+'</p><div class="meta"><span><b>'+n.episodes.length+'</b>회차</span><span>약 <b>'+mins(total(n))+'</b>분 분량</span>'+(rd?'<span>'+rd+'회차 읽음</span>':'')+'</div></div>';
     b.addEventListener('click',()=>go('novel',n.id));
-    $('#shelf').appendChild(b);
+    const w=document.createElement('div');w.className='bk';w.dataset.nv=n.color;
+    w.appendChild(b);
+    const rl=resumeLabel(n);
+    if(rl){
+      const r=document.createElement('button');
+      r.type='button';r.className='cta resume';r.textContent=rl;
+      r.addEventListener('click',()=>resume(n));
+      w.appendChild(r);
+    }
+    $('#shelf').appendChild(w);
   });
 }
 
@@ -255,10 +283,12 @@ function renderNovel(){
   document.title=n.title+' · 소설 서고';
   $('#novel').dataset.nv=n.color;
   const rd=readSet(n.id);
-  const last=ls.get('last-'+n.id,null);
-  const start=last!==null&&last<n.episodes.length?last:0;
-  $('#nhead').innerHTML=coverHTML(n)+'<div><span class="tag">'+esc(n.genre)+'</span><h1>'+esc(n.title)+'</h1><p>'+esc(n.synopsis)+'</p><button class="cta" type="button" id="cta">'+(last!==null?'이어 읽기 · '+esc(n.episodes[start].label):'처음부터 읽기')+'</button></div>';
-  $('#cta').addEventListener('click',()=>go('reader',n.id,start));
+  const pos=getPos(n.id);
+  const last=pos&&pos.idx<n.episodes.length?pos.idx:null;
+  const rl=last!==null?resumeLabel(n):null;
+  $('#nhead').innerHTML=coverHTML(n)+'<div><span class="tag">'+esc(n.genre)+'</span><h1>'+esc(n.title)+'</h1><p>'+esc(n.synopsis)+'</p><div class="ctas"><button class="cta" type="button" id="cta">'+(rl?esc(rl):'처음부터 읽기')+'</button>'+(rl?'<button class="cta ghost" type="button" id="cta0">처음부터</button>':'')+'</div></div>';
+  $('#cta').addEventListener('click',()=>rl?resume(n):go('reader',n.id,0));
+  if(rl)$('#cta0').addEventListener('click',()=>go('reader',n.id,0));
   const ol=$('#eplist');ol.innerHTML='';
   n.episodes.forEach((e,i)=>{
     const li=document.createElement('li');
@@ -277,6 +307,7 @@ async function renderReader(){
   $('#rTitle').textContent=n.title;
   $('#rNo').textContent=e.label;
   $('#rEp').textContent=e.title;
+  canSave=false;
   const box=$('#rTxt');box.innerHTML='';
   $('#rEnd').textContent='';
   const pv=n.episodes[i-1],nx=n.episodes[i+1];
@@ -296,8 +327,19 @@ async function renderReader(){
   });
   $('#rEnd').textContent=e.label==='프롤로그'?'프롤로그 끝':e.label+' 끝';
   const rd=readSet(n.id);rd.add(i);
-  ls.set('read-'+n.id,[...rd]);ls.set('last-'+n.id,i);
-  updateProg();
+  ls.set('read-'+n.id,[...rd]);
+  /* 위치 복원: 이어 읽기로 들어왔거나, 새로고침으로 같은 회차를 다시 연 경우 */
+  let y=0;
+  if(pendingY!=null)y=pendingY;
+  else if(firstRender){const p=getPos(n.id);if(p&&p.idx===i)y=p.y}
+  firstRender=false;pendingY=null;
+  savePos(n.id,i,y);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const d=document.documentElement;
+    window.scrollTo(0,y*Math.max(0,d.scrollHeight-window.innerHeight));
+    updateProg();
+    setTimeout(()=>{canSave=true},150);
+  }));
 }
 
 function updateProg(){
@@ -307,7 +349,11 @@ function updateProg(){
   const y=Math.min(1,Math.max(0,(-r.top+window.innerHeight*0.2)/Math.max(total,1)));
   $('#prog').style.width=(y*100)+'%';
 }
-window.addEventListener('scroll',updateProg,{passive:true});
+let saveT=null;
+function saveNow(){if(cur.view==='reader'&&canSave)savePos(cur.nid,cur.idx,curY())}
+window.addEventListener('scroll',()=>{updateProg();if(cur.view==='reader'&&canSave){clearTimeout(saveT);saveT=setTimeout(saveNow,250)}},{passive:true});
+window.addEventListener('pagehide',saveNow);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)saveNow()});
 
 $('#toHome').addEventListener('click',()=>go('home'));
 $('#toNovel').addEventListener('click',()=>go('novel',cur.nid));
@@ -329,7 +375,7 @@ function applyFace(){$('#rTxt').classList.toggle('sans',sans);$('#ff').setAttrib
 $('#ff').addEventListener('click',()=>{sans=!sans;applyFace()});
 applySize();applyFace();
 
-window.addEventListener('hashchange',()=>{const s=fromHash();if(s.view!==cur.view||s.nid!==cur.nid||s.idx!==cur.idx){cur=s;render();window.scrollTo(0,0)}});
+window.addEventListener('hashchange',()=>{const s=fromHash();if(s.view!==cur.view||s.nid!==cur.nid||s.idx!==cur.idx){firstRender=false;cur=s;render();window.scrollTo(0,0)}});
 
 loadAll().then(()=>{cur=fromHash();render()}).catch(err=>{
   $('#home').hidden=false;
