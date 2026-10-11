@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>소설 서고</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;700&family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* 레이아웃: 서고(표지 선반) → 작품 회차표 → 열람실. 작품마다 고유 색(--nv)을 쓰고 나머지는 먹빛 청회색으로 눌러 둔다. */
+:root{
+  --bg:#EDF0F1; --surface:#F6F8F8; --fg:#182024; --muted:#5A676D; --line:#D2D9DC;
+  --nv-a:#2C7894; --nv-b:#A23A34; --nv-c:#94650F;
+  --cv-a1:#DDEAEF; --cv-a2:#B6D0DA; --cv-b1:#EFDCD8; --cv-b2:#D9AFA8; --cv-fg:#14191C;
+  --f-display:'Hahmlet','Noto Serif KR',serif;
+  --f-read:'Gowun Batang','Noto Serif KR',serif;
+  --f-ui:'Noto Sans KR',system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  --read-size:19px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1316; --surface:#151C20; --fg:#E2E8EA; --muted:#8A989E; --line:#26313A;
+    --nv-a:#7CC3DC; --nv-b:#E27A71; --nv-c:#E8B04A;
+    --cv-a1:#1A2C34; --cv-a2:#10202A; --cv-b1:#33191A; --cv-b2:#1F1012; --cv-fg:#E8EDEF;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1316; --surface:#151C20; --fg:#E2E8EA; --muted:#8A989E; --line:#26313A;
+  --nv-a:#7CC3DC; --nv-b:#E27A71; --nv-c:#E8B04A;
+  --cv-a1:#1A2C34; --cv-a2:#10202A; --cv-b1:#33191A; --cv-b2:#1F1012; --cv-fg:#E8EDEF;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.6 var(--f-ui);padding-inline:16px;padding-block:0 48px}
+.wrap{max-width:880px;margin-inline:auto}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--nv,var(--nv-a));outline-offset:3px;border-radius:4px}
+[data-nv="a"]{--nv:var(--nv-a)}
+[data-nv="b"]{--nv:var(--nv-b)}
+[data-nv="c"]{--nv:var(--nv-c)}
+
+/* ---------- 서고 ---------- */
+.top{padding-block:40px 28px;display:flex;flex-direction:column;gap:6px}
+.top h1{font:700 clamp(30px,6vw,44px)/1.15 var(--f-display);margin:0;letter-spacing:-.01em;text-wrap:balance}
+.top p{margin:0;color:var(--muted)}
+.shelf{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:20px}
+.book{display:grid;grid-template-columns:132px minmax(0,1fr);gap:20px;text-align:left;width:100%;padding:16px;border:1px solid var(--line);background:var(--surface);border-radius:6px;transition:border-color .15s,transform .15s}
+.book:hover{border-color:var(--nv);transform:translateY(-2px)}
+.cover{aspect-ratio:3/4.2;border-radius:3px;display:flex;justify-content:center;align-items:flex-start;padding:16px 12px;position:relative;overflow:hidden;color:var(--cv-fg)}
+[data-nv="a"] .cover{background:linear-gradient(165deg,var(--cv-a1),var(--cv-a2))}
+[data-nv="b"] .cover{background:linear-gradient(165deg,var(--cv-b1),var(--cv-b2))}
+.cover .ct{writing-mode:vertical-rl;font:700 18px/1.5 var(--f-display);display:flex;gap:.5em;letter-spacing:.12em;position:relative;z-index:1}
+.cover .ct span{display:block}
+.cover svg{position:absolute;inset:0;width:100%;height:100%;opacity:.55}
+.cover svg *{stroke:var(--nv);fill:none;stroke-width:1.2}
+.cover svg .f{fill:var(--nv);stroke:none}
+.cover.pic{padding:0;aspect-ratio:687/1024;background:var(--surface);align-self:start}
+.cover.pic img{display:block;width:100%;height:100%;object-fit:cover}
+.binfo{display:flex;flex-direction:column;gap:8px;min-width:0}
+.binfo h2{word-break:keep-all;margin:0;font:700 20px/1.35 var(--f-display);text-wrap:balance}
+.tag{font-size:12px;letter-spacing:.06em;color:var(--nv);font-weight:500}
+.binfo p{margin:0;color:var(--muted);font-size:14px;line-height:1.7}
+.meta{margin-top:auto;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;display:flex;gap:6px 14px;flex-wrap:wrap}
+.meta b{color:var(--fg);font-weight:500}
+
+/* ---------- 작품 페이지 ---------- */
+.nav{display:flex;justify-content:space-between;align-items:center;padding-block:16px;gap:12px}
+.back{display:inline-flex;gap:6px;align-items:center;color:var(--muted);font-size:14px;padding:6px 4px}
+.back:hover{color:var(--fg)}
+.nhead{display:grid;grid-template-columns:132px minmax(0,1fr);gap:24px;padding-block:8px 28px;border-bottom:1px solid var(--line)}
+.nhead h1{margin:6px 0 10px;font:700 clamp(24px,4.6vw,34px)/1.25 var(--f-display);text-wrap:balance}
+.nhead p{margin:0 0 16px;color:var(--muted);max-width:56ch;line-height:1.75}
+.cta{display:inline-flex;align-items:center;gap:8px;background:var(--nv);color:var(--bg);font-weight:700;padding:10px 18px;border-radius:4px}
+.cta:hover{filter:brightness(1.08)}
+.eplist{list-style:none;margin:0;padding:0}
+.eplist li+li{border-top:1px solid var(--line)}
+.ep{display:grid;grid-template-columns:76px minmax(0,1fr) auto;gap:12px;align-items:baseline;width:100%;text-align:left;padding:15px 6px}
+.ep:hover{background:var(--surface)}
+.ep .no{font:700 14px var(--f-display);color:var(--nv)}
+.ep .tt{font:500 17px/1.4 var(--f-display);min-width:0;overflow-wrap:anywhere}
+.ep .info{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ep.read .tt{color:var(--muted)}
+.ep.read .info::before{content:"읽음 · ";color:var(--nv)}
+.ep.last{box-shadow:inset 3px 0 0 var(--nv)}
+
+/* ---------- 열람실 ---------- */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:-16px;padding:8px 16px}
+.bar .wrap{display:flex;align-items:center;gap:10px}
+.bar .nt{flex:1;min-width:0;font:500 14px var(--f-display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
+.tools{display:flex;gap:2px}
+.tools button{min-width:36px;height:36px;border-radius:4px;font-size:14px;color:var(--muted);padding-inline:8px}
+.tools button:hover{background:var(--surface);color:var(--fg)}
+.tools button[aria-pressed="true"]{color:var(--nv);font-weight:700}
+.prog{height:2px;background:var(--line);margin-inline:-16px}
+.prog i{display:block;height:100%;width:0;background:var(--nv)}
+article{max-width:34em;margin-inline:auto;padding-block:40px 24px}
+article header{margin-bottom:36px;text-align:center}
+article .no{font:700 14px var(--f-display);color:var(--nv);letter-spacing:.1em}
+article h1{margin:8px 0 0;font:700 clamp(26px,5vw,34px)/1.3 var(--f-display);text-wrap:balance}
+.txt{font-family:var(--f-read);font-size:var(--read-size);line-height:1.95;word-break:keep-all;overflow-wrap:break-word}
+.txt.sans{font-family:var(--f-ui);line-height:1.9}
+.txt p{margin:0 0 1.05em}
+.txt p.dl{margin-bottom:.7em}
+.txt hr{border:0;text-align:center;margin:2.2em 0;color:var(--muted);height:1em;line-height:1em}
+.txt hr::after{content:"◦  ◦  ◦";letter-spacing:.4em}
+.end{text-align:center;color:var(--muted);font:14px var(--f-display);margin:36px 0 28px;letter-spacing:.2em}
+.pn{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:34em;margin-inline:auto}
+.pn button{border:1px solid var(--line);background:var(--surface);padding:14px 16px;border-radius:4px;text-align:left;min-width:0;display:flex;flex-direction:column;gap:2px}
+.pn button:hover:not(:disabled){border-color:var(--nv)}
+.pn button:disabled{opacity:.45;cursor:default}
+.pn .l{font-size:12px;color:var(--muted)}
+.pn .v{font:500 15px/1.4 var(--f-display);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pn button:last-child{text-align:right}
+.hint{text-align:center;color:var(--muted);font-size:13px;margin-top:20px}
+
+@media (max-width:520px){
+  .book,.nhead{grid-template-columns:96px minmax(0,1fr);gap:14px}
+  .cover{padding:12px 8px}.cover .ct{font-size:14px}
+  .ep{grid-template-columns:60px minmax(0,1fr);}
+  .ep .info{grid-column:2}
+  .tools .opt{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head><body>
+<div class="wrap" id="home" hidden>
+  <header class="top">
+    <h1>소설 서고</h1>
+    <p id="homeSub"></p>
+  </header>
+  <div class="shelf" id="shelf"></div>
+</div>
+
+<div class="wrap" id="novel" hidden>
+  <div class="nav"><button class="back" id="toHome" type="button">← 서고로</button></div>
+  <section class="nhead" id="nhead"></section>
+  <ol class="eplist" id="eplist"></ol>
+</div>
+
+<div id="reader" hidden>
+  <div class="bar"><div class="wrap">
+    <button class="back" id="toNovel" type="button">← 목록</button>
+    <span class="nt" id="rTitle"></span>
+    <div class="tools">
+      <button type="button" id="fs-" aria-label="글자 작게">가−</button>
+      <button type="button" id="fs+" aria-label="글자 크게">가+</button>
+      <button type="button" id="ff" class="opt" aria-pressed="false" aria-label="고딕체로 보기">고딕</button>
+    </div>
+  </div></div>
+  <div class="prog"><i id="prog"></i></div>
+  <div class="wrap">
+    <article>
+      <header><div class="no" id="rNo"></div><h1 id="rEp"></h1></header>
+      <div class="txt" id="rTxt"></div>
+      <div class="end" id="rEnd"></div>
+    </article>
+    <div class="pn">
+      <button type="button" id="prev"><span class="l">이전 화</span><span class="v"></span></button>
+      <button type="button" id="next"><span class="l">다음 화</span><span class="v"></span></button>
+    </div>
+    <p class="hint">← → 키로도 넘길 수 있습니다</p>
+  </div>
+</div>
+
+<script>
+/* 데이터는 novels/ 폴더의 파일이 원본입니다. 이 페이지는 읽어서 보여주기만 합니다. */
+const $=s=>document.querySelector(s);
+const ls={
+  get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const mins=c=>Math.max(1,Math.round(c/500));
+const total=n=>n.episodes.reduce((s,e)=>s+e.chars,0);
+const readSet=id=>new Set(ls.get('read-'+id,[]));
+const spear='<svg viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true"><path d="M88 6 L14 134"/><path class="f" d="M88 6 L81 24 L92 18 Z"/><path d="M70 40 L82 46"/></svg>';
+const frost='<svg viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true"><path d="M20 0 V140"/><path d="M50 0 V96"/><path d="M80 0 V120"/><path d="M8 118 L92 118"/></svg>';
+const art={a:frost,b:spear};
+
+let DATA=[];
+const byId=id=>DATA.find(n=>n.id===id);
+const bodyCache={};
+
+async function getJSON(url){
+  const r=await fetch(url,{cache:'no-cache'});
+  if(!r.ok)throw new Error(url+' '+r.status);
+  return r.json();
+}
+async function loadAll(){
+  const idx=await getJSON('novels/index.json');
+  DATA=await Promise.all(idx.novels.map(async it=>{
+    const m=await getJSON('novels/'+it.id+'/meta.json');
+    m.id=it.id;m.color=it.color||'a';
+    m.coverUrl=m.cover?'novels/'+it.id+'/'+m.cover:'';
+    return m;
+  }));
+}
+async function loadBody(n,i){
+  const key=n.id+'/'+n.episodes[i].file;
+  if(bodyCache[key]!==undefined)return bodyCache[key];
+  const r=await fetch('novels/'+key,{cache:'no-cache'});
+  if(!r.ok)throw new Error(key+' '+r.status);
+  return bodyCache[key]=await r.text();
+}
+
+function coverHTML(n){
+  if(n.coverUrl)return '<div class="cover pic"'+(n.ratio?' style="aspect-ratio:'+esc(n.ratio)+'"':'')+'><img src="'+esc(n.coverUrl)+'" alt="'+esc(n.title)+' 표지"></div>';
+  return '<div class="cover" aria-hidden="true">'+(art[n.color]||frost)+'<div class="ct">'+(n.coverText||[n.title]).map(t=>'<span>'+esc(t)+'</span>').join('')+'</div></div>';
+}
+
+let cur={view:'home',nid:null,idx:0};
+function go(view,nid,idx,push){
+  cur={view,nid:nid||null,idx:idx||0};
+  render();
+  window.scrollTo(0,0);
+  if(push!==false){try{location.hash=view==='home'?'':view==='novel'?nid:nid+'.'+idx}catch(e){}}
+}
+function fromHash(){
+  let h='';try{h=location.hash.slice(1)}catch(e){}
+  const m=h.match(/^([a-z0-9-]+)(?:\.(\d+))?$/);
+  if(m&&byId(m[1])){
+    const n=byId(m[1]);
+    if(m[2]!==undefined&&+m[2]<n.episodes.length)return {view:'reader',nid:m[1],idx:+m[2]};
+    return {view:'novel',nid:m[1],idx:0};
+  }
+  return {view:'home',nid:null,idx:0};
+}
+
+function render(){
+  $('#home').hidden=cur.view!=='home';
+  $('#novel').hidden=cur.view!=='novel';
+  $('#reader').hidden=cur.view!=='reader';
+  if(cur.view==='home')renderHome();
+  else if(cur.view==='novel')renderNovel();
+  else renderReader();
+}
+
+function renderHome(){
+  document.title='소설 서고';
+  $('#homeSub').textContent='지금 읽을 수 있는 소설 '+DATA.length+'편. 작품을 고르면 회차별로 볼 수 있습니다.';
+  $('#shelf').innerHTML='';
+  DATA.forEach(n=>{
+    const b=document.createElement('button');
+    b.type='button';b.className='book';b.dataset.nv=n.color;
+    const rd=readSet(n.id).size;
+    b.innerHTML=coverHTML(n)+'<div class="binfo"><span class="tag">'+esc(n.genre)+'</span><h2>'+esc(n.title)+'</h2><p>'+esc(n.synopsis)+'</p><div class="meta"><span><b>'+n.episodes.length+'</b>회차</span><span>약 <b>'+mins(total(n))+'</b>분 분량</span>'+(rd?'<span>'+rd+'회차 읽음</span>':'')+'</div></div>';
+    b.addEventListener('click',()=>go('novel',n.id));
+    $('#shelf').appendChild(b);
+  });
+}
+
+function renderNovel(){
+  const n=byId(cur.nid);
+  document.title=n.title+' · 소설 서고';
+  $('#novel').dataset.nv=n.color;
+  const rd=readSet(n.id);
+  const last=ls.get('last-'+n.id,null);
+  const start=last!==null&&last<n.episodes.length?last:0;
+  $('#nhead').innerHTML=coverHTML(n)+'<div><span class="tag">'+esc(n.genre)+'</span><h1>'+esc(n.title)+'</h1><p>'+esc(n.synopsis)+'</p><button class="cta" type="button" id="cta">'+(last!==null?'이어 읽기 · '+esc(n.episodes[start].label):'처음부터 읽기')+'</button></div>';
+  $('#cta').addEventListener('click',()=>go('reader',n.id,start));
+  const ol=$('#eplist');ol.innerHTML='';
+  n.episodes.forEach((e,i)=>{
+    const li=document.createElement('li');
+    const b=document.createElement('button');
+    b.type='button';b.className='ep'+(rd.has(i)?' read':'')+(last===i?' last':'');
+    b.innerHTML='<span class="no">'+esc(e.label)+'</span><span class="tt">'+esc(e.title)+'</span><span class="info">'+mins(e.chars)+'분 · '+e.chars.toLocaleString('ko-KR')+'자</span>';
+    b.addEventListener('click',()=>go('reader',n.id,i));
+    li.appendChild(b);ol.appendChild(li);
+  });
+}
+
+async function renderReader(){
+  const n=byId(cur.nid),i=cur.idx,e=n.episodes[i];
+  document.title=e.label+' '+e.title+' · '+n.title;
+  $('#reader').dataset.nv=n.color;
+  $('#rTitle').textContent=n.title;
+  $('#rNo').textContent=e.label;
+  $('#rEp').textContent=e.title;
+  const box=$('#rTxt');box.innerHTML='';
+  $('#rEnd').textContent='';
+  const pv=n.episodes[i-1],nx=n.episodes[i+1];
+  const P=$('#prev'),N=$('#next');
+  P.disabled=!pv;N.disabled=!nx;
+  P.querySelector('.v').textContent=pv?pv.label+' '+pv.title:'처음입니다';
+  N.querySelector('.v').textContent=nx?nx.label+' '+nx.title:'다음 화는 준비 중입니다';
+  let body;
+  try{body=await loadBody(n,i)}catch(err){box.textContent='본문을 불러오지 못했습니다.';return}
+  if(cur.view!=='reader'||cur.nid!==n.id||cur.idx!==i)return;
+  body.split('\n').forEach(line=>{
+    const t=line.trim();if(!t)return;
+    if(/^\*\s*\*\s*\*$/.test(t)){box.appendChild(document.createElement('hr'));return}
+    const p=document.createElement('p');
+    if(/^["“”'‘]/.test(t))p.className='dl';
+    p.textContent=t;box.appendChild(p);
+  });
+  $('#rEnd').textContent=e.label==='프롤로그'?'프롤로그 끝':e.label+' 끝';
+  const rd=readSet(n.id);rd.add(i);
+  ls.set('read-'+n.id,[...rd]);ls.set('last-'+n.id,i);
+  updateProg();
+}
+
+function updateProg(){
+  if(cur.view!=='reader')return;
+  const a=$('article'),r=a.getBoundingClientRect();
+  const total=r.height-window.innerHeight*0.6;
+  const y=Math.min(1,Math.max(0,(-r.top+window.innerHeight*0.2)/Math.max(total,1)));
+  $('#prog').style.width=(y*100)+'%';
+}
+window.addEventListener('scroll',updateProg,{passive:true});
+
+$('#toHome').addEventListener('click',()=>go('home'));
+$('#toNovel').addEventListener('click',()=>go('novel',cur.nid));
+$('#prev').addEventListener('click',()=>{if(cur.idx>0)go('reader',cur.nid,cur.idx-1)});
+$('#next').addEventListener('click',()=>{if(cur.idx<byId(cur.nid).episodes.length-1)go('reader',cur.nid,cur.idx+1)});
+document.addEventListener('keydown',ev=>{
+  if(cur.view!=='reader'||ev.metaKey||ev.ctrlKey||ev.altKey)return;
+  if(ev.key==='ArrowLeft')$('#prev').click();
+  if(ev.key==='ArrowRight')$('#next').click();
+});
+
+/* 글자 크기와 서체: 이 브라우저에만 저장 */
+let size=ls.get('size',19);
+function applySize(){size=Math.min(28,Math.max(15,size));document.documentElement.style.setProperty('--read-size',size+'px');ls.set('size',size)}
+$('#fs-').addEventListener('click',()=>{size-=1;applySize()});
+$('#fs\\+').addEventListener('click',()=>{size+=1;applySize()});
+let sans=ls.get('sans',false);
+function applyFace(){$('#rTxt').classList.toggle('sans',sans);$('#ff').setAttribute('aria-pressed',String(sans));$('#ff').textContent=sans?'명조':'고딕';$('#ff').setAttribute('aria-label',sans?'명조체로 보기':'고딕체로 보기');ls.set('sans',sans)}
+$('#ff').addEventListener('click',()=>{sans=!sans;applyFace()});
+applySize();applyFace();
+
+window.addEventListener('hashchange',()=>{const s=fromHash();if(s.view!==cur.view||s.nid!==cur.nid||s.idx!==cur.idx){cur=s;render();window.scrollTo(0,0)}});
+
+loadAll().then(()=>{cur=fromHash();render()}).catch(err=>{
+  $('#home').hidden=false;
+  $('#homeSub').textContent=location.protocol==='file:'
+    ?'파일을 직접 열면 소설을 불러올 수 없습니다. "서고 열기.bat"로 실행하거나 배포 주소로 접속하세요.'
+    :'소설 목록을 불러오지 못했습니다. ('+err.message+')';
+});
+</script>
+</body></html>
