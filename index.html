@@ -184,7 +184,7 @@ const art={a:frost,b:spear};
 
 /* 읽던 위치: 회차 번호와 본문 세로 위치(0~1 비율)를 작품별로 저장 */
 const getPos=id=>{const p=ls.get('pos-'+id,null);return p&&typeof p.idx==='number'?p:null};
-const savePos=(id,idx,y)=>ls.set('pos-'+id,{idx,y:Math.min(1,Math.max(0,y))});
+const savePos=(id,idx,y)=>{ls.set('pos-'+id,{idx,y:Math.min(1,Math.max(0,y)),t:Date.now()});window.__sync&&__sync.push()};
 let canSave=false;
 function curY(){const d=document.documentElement;return window.scrollY/Math.max(1,d.scrollHeight-window.innerHeight)}
 function resumeLabel(n){
@@ -253,6 +253,7 @@ function render(){
   if(cur.view==='home')renderHome();
   else if(cur.view==='novel')renderNovel();
   else renderReader();
+  window.__onRender&&window.__onRender();
 }
 
 function renderHome(){
@@ -327,7 +328,7 @@ async function renderReader(){
   });
   $('#rEnd').textContent=e.label==='프롤로그'?'프롤로그 끝':e.label+' 끝';
   const rd=readSet(n.id);rd.add(i);
-  ls.set('read-'+n.id,[...rd]);
+  ls.set('read-'+n.id,[...rd]);window.__sync&&__sync.push();
   /* 위치 복원: 이어 읽기로 들어왔거나, 새로고침으로 같은 회차를 다시 연 경우 */
   let y=0;
   if(pendingY!=null)y=pendingY;
@@ -384,4 +385,5 @@ loadAll().then(()=>{cur=fromHash();render()}).catch(err=>{
     :'소설 목록을 불러오지 못했습니다. ('+err.message+')';
 });
 </script>
+<script type="module" src="sync.js"></script>
 </body></html>
