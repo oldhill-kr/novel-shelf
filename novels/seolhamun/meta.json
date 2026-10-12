@@ -39,6 +39,36 @@
       "label": "5화",
       "title": "사파의 두 번째 밤",
       "chars": 3261
+    },
+    {
+      "file": "06.md",
+      "label": "6화",
+      "title": "봉인의 첫 금",
+      "chars": 2256
+    },
+    {
+      "file": "07.md",
+      "label": "7화",
+      "title": "공은 문주에게",
+      "chars": 2416
+    },
+    {
+      "file": "08.md",
+      "label": "8화",
+      "title": "현판 뒤의 글씨",
+      "chars": 1647
+    },
+    {
+      "file": "09.md",
+      "label": "9화",
+      "title": "육성회의 사자",
+      "chars": 2236
+    },
+    {
+      "file": "10.md",
+      "label": "10화",
+      "title": "이 집은 내가 지킨다",
+      "chars": 2368
     }
   ]
 }

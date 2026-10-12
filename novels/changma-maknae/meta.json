@@ -39,6 +39,36 @@
       "label": "5화",
       "title": "악몽",
       "chars": 2517
+    },
+    {
+      "file": "06.md",
+      "label": "6화",
+      "title": "흑영대가 온다",
+      "chars": 1868
+    },
+    {
+      "file": "07.md",
+      "label": "7화",
+      "title": "문주의 침묵",
+      "chars": 1950
+    },
+    {
+      "file": "08.md",
+      "label": "8화",
+      "title": "첫 번째 파편",
+      "chars": 2287
+    },
+    {
+      "file": "09.md",
+      "label": "9화",
+      "title": "사형들의 선택",
+      "chars": 1968
+    },
+    {
+      "file": "10.md",
+      "label": "10화",
+      "title": "내가 누구든",
+      "chars": 2306
     }
   ]
 }
