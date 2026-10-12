@@ -30,22 +30,23 @@ async function pull(){
   return changed;
 }
 let pt=null;
+const stat=(ok,m)=>{const b=$('#abtn');if(b)b.title=ok?'동기화됨':'동기화 실패: '+m;const s=$('#astat');if(s){s.textContent=ok?'✓ 동기화':'⚠ 동기화 실패: '+m;s.style.color=ok?'var(--muted)':'#D35'}};
 async function push(){
   if(!user)return;
-  try{await F.setDoc(F.doc(db,'users',user.uid),localState(),{merge:true})}catch(e){console.warn('sync push',e)}
+  try{await F.setDoc(F.doc(db,'users',user.uid),localState(),{merge:true});stat(true)}catch(e){console.warn('sync push',e);stat(false,e.code||e.message)}
 }
 window.__sync={push(){clearTimeout(pt);pt=setTimeout(push,1500)}};
 async function syncAll(){
   try{
     const ch=await pull();await push();
     if(ch&&cur.view!=='reader')render();
-  }catch(e){console.warn('sync',e)}
+  }catch(e){console.warn('sync',e);stat(false,e.code||e.message)}
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&user&&cur.view!=='reader')syncAll()});
 
 /* ---------- 로그인 UI ---------- */
 document.body.insertAdjacentHTML('beforeend',`
-<div id="authbar"><button type="button" id="abtn"></button></div>
+<div id="authbar"><span id="astat"></span><button type="button" id="abtn"></button></div>
 <div id="amodal" hidden><div class="box" role="dialog" aria-modal="true" aria-labelledby="atitle">
   <button type="button" class="x" id="aclose" aria-label="닫기">×</button>
   <h2 id="atitle">로그인</h2>
@@ -60,7 +61,8 @@ document.body.insertAdjacentHTML('beforeend',`
   <button type="button" class="cta ghost" id="agoogle">구글로 계속하기</button>
 </div></div>`);
 const css=document.createElement('style');css.textContent=`
-#authbar{position:fixed;top:10px;right:12px;z-index:30}
+#authbar{position:fixed;top:10px;right:12px;z-index:30;display:flex;align-items:center;gap:8px}
+#astat{font-size:12px}
 #authbar button{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px}
 #amodal{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.55);display:grid;place-items:center;padding:16px}
 #amodal[hidden]{display:none}
