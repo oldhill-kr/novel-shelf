@@ -150,9 +150,22 @@ async function mountComments(){
 }
 window.__onRender=()=>{const c=$('#cmt');if(cur.view!=='novel'){if(c)c.remove();return}mountComments()};
 
+/* 계정 간 기록 혼선 방지: 로그아웃하거나 다른 계정으로 로그인하면 이 브라우저의 로컬 읽기 기록을 비운다 */
+const clearLocal=()=>{ids().forEach(id=>{try{localStorage.removeItem('pos-'+id);localStorage.removeItem('read-'+id)}catch(e){}})};
+let prevUid=null;
 A.onAuthStateChanged(auth,async u=>{
   user=u;setBtn();
-  if(u)await syncAll();
+  if(u){
+    const owner=lsg('sync-uid',null);
+    if(owner&&owner!==u.uid)clearLocal();
+    lss('sync-uid',u.uid);
+    prevUid=u.uid;
+    if($('#astat'))$('#astat').textContent='';
+    await syncAll();
+    if(cur.view!=='reader')render();
+  }else{
+    if(prevUid){clearLocal();try{localStorage.removeItem('sync-uid')}catch(e){}prevUid=null;if($('#astat'))$('#astat').textContent='';if(cur.view==='reader')go('home');else render()}
+  }
   if(cur&&cur.view==='novel')mountComments();
 });
 setBtn();
