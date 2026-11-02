@@ -1,7 +1,20 @@
 {
   "novels": [
-    {"id": "seolhamun", "color": "a"},
-    {"id": "changma-maknae", "color": "b"},
-    {"id": "kalad-chronicle", "color": "c"}
+    {
+      "id": "seolhamun",
+      "color": "a"
+    },
+    {
+      "id": "changma-maknae",
+      "color": "b"
+    },
+    {
+      "id": "kalad-chronicle",
+      "color": "c"
+    },
+    {
+      "id": "kalad-chronicle-2",
+      "color": "d"
+    }
   ]
 }
